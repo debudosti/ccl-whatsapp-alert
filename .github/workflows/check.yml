@@ -1,0 +1,26 @@
+name: CCL Notice WhatsApp Alert
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python -m playwright install chromium --with-deps
+      - run: python ccl_check.py
+        env:
+          CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+      - name: Save seen state
+        run: |
+          git config user.name "ccl-bot"
+          git config user.email "bot@localhost"
+          git add seen.json || true
+          git diff --staged --quiet || git commit -m "update seen" || true
+          git push || true
